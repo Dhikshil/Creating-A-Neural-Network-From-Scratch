@@ -26,26 +26,34 @@ print(Y_train)
 print(X_train[:, 0].shape)
 
 def init_params():
-    W1 = np.random.rand(10, 784) - 0.5
-    b1 = np.random.rand(10, 1) - 0.5
+    H = 64 # Hidden Layer size
+    input_size = 784 # Dataset size
+    output_size = 10 # Digit Classes 0-9
 
-    W2 = np.random.rand(10, 10) - 0.5
-    b2 = np.random.rand(10, 1) - 0.5
+    W1 = np.random.randn(H, input_size) * np.sqrt(1/input_size)
+    b1 = np.zeros((H, 1))
+
+    W2 = np.random.randn(output_size, H) * np.sqrt(1 / H)
+    b2 = np.zeros((output_size, 1))
 
     return W1, b1, W2, b2    
 
 def ReLU(Z):
     return np.maximum(0, Z)
 
+def deriv_ReLU(Z):
+    return Z > 0
+
 def softmax(Z):
-    expZ = np.exp(Z - np.max(Z, axis=0, keepdims=True))  # improves stability
+    Z -= np.max(Z, axis=0, keepdims=True) 
+    expZ = np.exp(Z)
     return expZ / np.sum(expZ, axis=0, keepdims=True)
 
 def forward_prop(W1, b1, W2, b2, X):
-    Z1 = W1.dot(X) + b1
+    Z1 = W1 @ X + b1
     A1 = ReLU(Z1)
-    
-    Z2 = W2.dot(A1) + b2
+
+    Z2 = W2 @ A1 + b2
     A2 = softmax(Z2)
 
     return Z1, A1, Z2, A2
@@ -55,47 +63,49 @@ def one_hot(Y):
     one_hot_Y[Y, np.arange(Y.size)] = 1
     return one_hot_Y
 
-def deriv_ReLU(Z):
-    return Z > 0
-
 def back_prop(Z1, A1, Z2, A2, W2, X, Y):
     m = Y.size
     one_hot_Y = one_hot(Y)
+
     dZ2 = A2 - one_hot_Y
-    dW2 = 1 / m * dZ2.dot(A1.T)
-    db2 = 1 / m * np.sum(dZ2, axis=1).reshape(-1,1)
-    dZ1 = W2.T.dot(dZ2) * deriv_ReLU(Z1)
-    dW1 = 1 / m * dZ1.dot(X.T)
-    db1 = 1 / m * np.sum(dZ1, axis=1).reshape(-1,1)
+    dW2 = (1/m) * dZ2 @ A1.T
+    db2 = (1/m) * np.sum(dZ2, axis=1, keepdims=True)
+
+    dZ1 = (W2.T @ dZ2) * deriv_ReLU(Z1)
+    dW1 = (1/m) * dZ1 @ X.T
+    db1 = (1/m) * np.sum(dZ1, axis=1, keepdims=True)
+
     return dW1, db1, dW2, db2
 
-def update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha):
-    W1 = W1 - alpha * dW1
-    b1 = b1 - alpha * db1
-    W2 = W2 - alpha * dW2
-    b2 = b2 - alpha * db2
+def update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, lr):
+    W1 -= lr * dW1
+    b1 -= lr * db1
+    W2 -= lr * dW2
+    b2 -= lr * db2
     return W1, b1, W2, b2
 
 def get_predictions(A2):
-    return np.argmax(A2, axis = 0)
+    return np.argmax(A2, axis=0)
 
 def get_accuracy(predictions, Y):
-    print(predictions, Y)
     return np.mean(predictions == Y)
 
-def gradient_descent(X, Y, iterations, alpha):
+def gradient_descent(X, Y, iterations, lr):
     W1, b1, W2, b2 = init_params()
+
     for i in range(iterations):
         Z1, A1, Z2, A2 = forward_prop(W1, b1, W2, b2, X)
         dW1, db1, dW2, db2 = back_prop(Z1, A1, Z2, A2, W2, X, Y)
-        W1, b1, W2, b2 = update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
-        if i % 10 == 0:
-            print("iteration", i)
-            print("accuracy", get_accuracy(get_predictions(A2), Y))
+        W1, b1, W2, b2 = update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, lr)
+
+        if i % 20 == 0:
+            acc = get_accuracy(get_predictions(A2), Y)
+            print(f"Iteration {i} — Accuracy: {acc:.4f}")
 
     return W1, b1, W2, b2
 
-W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 500, 0.15)
+
+W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 500, 0.2)
 
 
 np.savez("mnist_model.npz", W1=W1, b1=b1, W2=W2, b2=b2)
