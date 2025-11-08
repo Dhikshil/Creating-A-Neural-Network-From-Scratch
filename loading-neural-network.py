@@ -9,7 +9,7 @@ W2 = data["W2"]
 b2 = data["b2"]
 
 # Load and preprocess image
-img = Image.open("C:/Users/quick/OneDrive/Documents/Creating-A-Neural-Network-From-Scratch/testing-number-8.png").convert("L")
+img = Image.open("C:/Users/quick/OneDrive/Documents/Creating-A-Neural-Network-From-Scratch/testing-number-9.png").convert("L")
 img = img.resize((28, 28))
 arr = np.array(img).flatten().astype(np.float32)
 
