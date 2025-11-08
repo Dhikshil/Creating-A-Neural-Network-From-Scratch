@@ -97,14 +97,6 @@ def gradient_descent(X, Y, iterations, alpha):
 
 W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 500, 0.15)
 
-print(W1, b1, W2, b2) 
 
 np.savez("mnist_model.npz", W1=W1, b1=b2, W2=W2, b2=b2)
-
-
-data = np.load("mnist_model.npz")
-W1 = data["W1"]
-b1 = data["b1"]
-W2 = data["W2"]
-b2 = data["b2"]
 
